@@ -1,0 +1,24 @@
+{{- if .Values.network }}
+{{- with .Values.network }}
+{{- $network := . }}
+{{- if and .monitoring .allowMonitoringNamespaces }}
+{{- range .allowMonitoringNamespaces }}
+{{- if not (has . $network.allowAllNamespaces) }}
+---
+apiVersion: crd.projectcalico.org/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ printf "%s-allow-from-%s" . $network.monitoring.namespace | quote }}
+  namespace: {{ . | quote }}
+spec:
+  types:
+    - Ingress
+  ingress:
+    - action: Allow
+      source:
+        namespaceSelector: has(projectcalico.org/name) && projectcalico.org/name in {"{{ $network.monitoring.namespace }}"}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,57 @@
+{{- if .Values.network }}
+{{- with .Values.network }}
+{{- $network := . }}
+{{- if .allowIn }}
+{{- range $index, $item := .allowIn }}
+{{- if not (has $item.namespace $network.allowAllNamespaces) }}
+---
+apiVersion: crd.projectcalico.org/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ printf "%s-allow-in-%d" $item.namespace (add $index 1) | quote }}
+  namespace: {{ $item.namespace | quote }}
+spec:
+  types:
+    - Ingress
+  ingress:
+    - action: Allow
+      protocol: {{ $item.protocol | default "TCP" | quote }}
+      {{- if $item.source }}
+      source:
+        {{- tpl (toYaml $item.source | nindent 8) $ }}
+      {{- end }}
+      {{- if $item.destination }}
+      destination:
+        {{- tpl (toYaml $item.destination | nindent 8) $ }}
+      {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- if .allowOut }}
+{{- range $index, $item := .allowOut }}
+{{- if not (has $item.namespace $network.allowAllNamespaces) }}
+---
+apiVersion: crd.projectcalico.org/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ printf "%s-allow-out-%d" $item.namespace (add $index 1) | quote }}
+  namespace: {{ $item.namespace | quote }}
+spec:
+  types:
+    - Egress
+  egress:
+    - action: Allow
+      protocol: {{ $item.protocol | default "TCP" | quote }}
+      {{- if $item.source }}
+      source:
+        {{- tpl (toYaml $item.source | nindent 8) $ }}
+      {{- end }}
+      {{- if $item.destination }}
+      destination:
+        {{- tpl (toYaml $item.destination | nindent 8) $ }}
+      {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

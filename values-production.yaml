@@ -1,0 +1,85 @@
+namespaces:
+  - debug
+  - ingress-nginx-web
+  - ingress-nginx-ais
+  - prometheus
+  - pipelines
+  - rc
+
+network:
+  dns:
+    selector: 'k8s-app == "kube-dns"'
+    protocol: UDP
+    ports: [53]
+
+  apiserver:
+    # Kubernetes API server IP: kubectl get endpoints --namespace default kubernetes
+    # See: https://stackoverflow.com/questions/67387396
+    port: 443
+
+  ingress:
+    namespace: ingress-nginx-web
+
+  # Allow
+  allowAllNamespaces:
+    # System
+    - kube-system
+    - calico-system
+    - tigera-operator
+    - gatekeeper-system
+    # Debug
+    - debug
+    # Argo CD
+    - argocd
+    # Monitoring
+    - prometheus
+
+  allowApiserverNamespaces:
+    - ingress-nginx-web
+    - ingress-nginx-ais
+
+  allowIngressNamespaces:
+    # Debug
+    - debug
+    # Argo CD
+    - argocd
+    # Applications
+    - rc
+    # Monitoring
+    - prometheus
+
+  allowWithinNamespaces:
+    - ingress-nginx-web
+    - ingress-nginx-ais
+    # Applications
+    - pipelines
+    - rc
+
+  allowIn:
+    - namespace: ingress-nginx-web
+      destination:
+        selector: 'app.kubernetes.io/name == "ingress-nginx"'
+        ports: [80, 443, 8443]
+    - namespace: ingress-nginx-ais
+      destination:
+        selector: 'app.kubernetes.io/name == "ingress-nginx"'
+        ports: [80, 443, 8443]
+    # Pipelines
+    - namespace: pipelines
+      source:
+        namespaceSelector: has(projectcalico.org/name) && projectcalico.org/name in {"rc"}
+
+  allowOut:
+    # RC
+    - namespace: rc
+      destination:
+        nets:
+          - "0.0.0.0/0"
+    - namespace: rc
+      destination:
+        namespaceSelector: has(projectcalico.org/name) && projectcalico.org/name in {"pipelines"}
+    # Pipelines
+    - namespace: pipelines
+      destination:
+        nets:
+          - "0.0.0.0/0" # All

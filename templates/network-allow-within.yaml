@@ -1,0 +1,33 @@
+{{- if .Values.network }}
+{{- with .Values.network }}
+{{- $network := . }}
+{{- if .allowWithinNamespaces }}
+{{- range .allowWithinNamespaces }}
+{{- if not (has . $network.allowAllNamespaces) }}
+---
+apiVersion: crd.projectcalico.org/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ printf "%s-allow-within" . | quote }}
+  namespace: {{ . | quote }}
+spec:
+  types:
+    - Ingress
+    - Egress
+  ingress:
+    - action: Allow
+      source:
+        namespaceSelector: has(projectcalico.org/name) && projectcalico.org/name in {"{{ . }}"}
+      destination:
+        namespaceSelector: has(projectcalico.org/name) && projectcalico.org/name in {"{{ . }}"}
+  egress:
+    - action: Allow
+      source:
+        namespaceSelector: has(projectcalico.org/name) && projectcalico.org/name in {"{{ . }}"}
+      destination:
+        namespaceSelector: has(projectcalico.org/name) && projectcalico.org/name in {"{{ . }}"}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

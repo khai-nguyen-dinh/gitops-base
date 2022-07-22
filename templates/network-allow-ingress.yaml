@@ -1,0 +1,41 @@
+{{- if .Values.network }}
+{{- with .Values.network }}
+{{- $network := . }}
+{{- if and .ingress .allowIngressNamespaces }}
+{{- range .allowIngressNamespaces }}
+{{- if not (has $network.ingress.namespace $network.allowAllNamespaces) }}
+---
+apiVersion: crd.projectcalico.org/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ printf "%s-allow-to-%s" $network.ingress.namespace . | quote }}
+  namespace: {{ $network.ingress.namespace | quote }}
+spec:
+  types:
+    - Egress
+  egress:
+    - action: Allow
+      source:
+        namespaceSelector: has(projectcalico.org/name) && projectcalico.org/name in {"{{ $network.ingress.namespace }}"}
+      destination:
+        namespaceSelector: has(projectcalico.org/name) && projectcalico.org/name in {"{{ . }}"}
+{{- end }}
+{{- if not (has . $network.allowAllNamespaces) }}
+---
+apiVersion: crd.projectcalico.org/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ printf "%s-allow-from-%s" . $network.ingress.namespace | quote }}
+  namespace: {{ . | quote }}
+spec:
+  types:
+    - Ingress
+  ingress:
+    - action: Allow
+      source:
+        namespaceSelector: has(projectcalico.org/name) && projectcalico.org/name in {"{{ $network.ingress.namespace }}"}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

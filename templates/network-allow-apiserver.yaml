@@ -1,0 +1,29 @@
+{{- if .Values.network }}
+{{- with .Values.network }}
+{{- $network := . }}
+{{- if and .apiserver .allowApiserverNamespaces }}
+{{- range .allowApiserverNamespaces }}
+{{- if not (has . $network.allowAllNamespaces) }}
+---
+apiVersion: crd.projectcalico.org/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ printf "%s-allow-to-apiserver" . | quote }}
+  namespace: {{ . | quote }}
+spec:
+  selector: all()
+  types:
+    - Egress
+  egress:
+    - action: Allow
+      protocol: TCP
+      destination:
+        nets:
+          - {{ $network.apiserver.address }}
+        ports:
+          - {{ $network.apiserver.port }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

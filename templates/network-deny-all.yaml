@@ -1,0 +1,24 @@
+{{- if .Values.network }}
+{{- with .Values.network }}
+---
+apiVersion: crd.projectcalico.org/v1
+kind: GlobalNetworkPolicy
+metadata:
+  name: deny-all
+spec:
+  namespaceSelector: has(projectcalico.org/name) && projectcalico.org/name not in { {{ range $index, $item := .allowAllNamespaces | default (list "") }}{{ if gt $index 0 }}, {{ end }}{{ $item | quote }}{{ end }} }
+  types:
+    - Ingress
+    - Egress
+  {{- if .dns }}
+  egress:
+    # Allow DNS connections
+    - action: Allow
+      protocol: {{ .dns.protocol | quote }}
+      destination:
+        selector: {{ .dns.selector | quote }}
+        ports:
+          {{- toYaml .dns.ports | nindent 10 }}
+  {{- end }}
+{{- end }}
+{{- end }}
