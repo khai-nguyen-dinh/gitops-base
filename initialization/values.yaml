@@ -1,3 +1,6 @@
+# Namespaces
+namespaces:
+  - preview
 projects:
   debug:
     enabled: false
@@ -6,7 +9,7 @@ projects:
       namespaces: ["*"]
 
   applications:
-    enabled: false
+    enabled: true
     destination:
       name: "*"
       namespaces: ["*"]
